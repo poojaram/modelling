@@ -22,6 +22,7 @@ for(i in 1:ncol(dengue_features_train)){
 for(i in 1:ncol(dengue_labels_train)){
   dengue_labels_train[is.na(dengue_labels_train[,i]), i] <- mean(dengue_labels_train[,i], na.rm = TRUE)
 }
+na_count <- data.frame(colSums(is.na(dengue_features_train)))
 
 
 # Filter of data by city  
@@ -216,4 +217,139 @@ sj_cases_over_weeks <- ggplot(data = sj_joined) +
 
 # Plot for cases over weeks for different years in IQ
 iq_cases_over_weeks <- ggplot(data = iq_joined) +
-  geom_line(mapping = aes(x = weekofyear, y = four_lag_cases))
+  geom_line(mapping = aes(x = weekofyear, y = four_lag_cases)) +
+  facet_wrap(~year)
+
+
+
+
+
+###################################################################################################
+#################################### Statistical Modeling #########################################
+###################################################################################################
+
+# Loading the packages used
+#if(!require(devtools)) install.packages("devtools")
+#devtools::install_github("kassambara/ggpubr")
+
+# Pearson's, Spearman's and Kendall's Correlation Coefficient for SJ Data
+sj_response <- sj_joined$total_cases
+sj_data <- sj_joined[2:ncol(sj_joined)-2]
+sj_data <- sj_data[-4]
+corr_coeff_sj <- data.frame(colnames(sj_joined)[2:ncol(sj_joined)-2])
+corr_coeff_sj <- corr_coeff_sj[-4]
+corr_coeff_sj["pearson"] <- 0
+corr_coeff_sj["pearson"] <- 0
+corr_coeff_sj["spearman"] <- 0
+corr_coeff_sj["kendall"] <- 0
+y_vec <- unlist(sj_joined[4])
+for(i in 6:ncol(sj_data)){
+  x_vec <- unlist(sj_joined[i])
+  testp_sj <- cor.test(x_vec, y_vec,method = "pearson")
+  corr_coeff_sj[i-5,"pearson"] <- testp_sj$estimate
+  corr_coeff_sj[i-5,"p-val"] <- testp_sj$p.value
+  tests_sj <- cor.test(x_vec, y_vec,method = "spearman")
+  corr_coeff_sj[i-5,"spearman"] <- tests_sj$estimate
+  testk_sj <- cor.test(x_vec, y_vec,method = "kendall")
+  corr_coeff_sj[i-5,"kendall"] <- testk_sj$estimate
+}
+
+# Pearson's, Spearman's and Kendall's Correlation Coefficient for IQ Data
+iq_response <- iq_joined$total_cases
+iq_data <- iq_joined[2:ncol(iq_joined)-2]
+iq_data <- iq_data[-4]
+corr_coeff_iq <- data.frame(colnames(iq_joined)[2:ncol(iq_joined)-2])
+corr_coeff_iq <- corr_coeff_iq[-4]
+corr_coeff_iq["pearson"] <- 0
+corr_coeff_iq["pearson"] <- 0
+corr_coeff_iq["spearman"] <- 0
+corr_coeff_iq["kendall"] <- 0
+y_vec <- unlist(iq_joined[4])
+for(i in 6:ncol(iq_data)){
+  x_vec <- unlist(iq_joined[i])
+  testp_iq <- cor.test(x_vec, y_vec,method = "pearson")
+  corr_coeff_iq[i-5,"pearson"] <- testp_iq$estimate
+  corr_coeff_iq[i-5,"p-val"] <- testp_iq$p.value
+  tests_iq <- cor.test(x_vec, y_vec,method = "spearman")
+  corr_coeff_iq[i-5,"spearman"] <- tests_iq$estimate
+  testk_iq <- cor.test(x_vec, y_vec,method = "kendall")
+  corr_coeff_iq[i-5,"kendall"] <- testk_iq$estimate
+}
+
+# Inference - the response feature (#cases) not any significant relationship with 
+# any of the feature
+
+# Feature Selection 
+
+# Installing and Loading Libraries - Boruta
+#install.packages("Boruta")
+
+library(Boruta)
+
+# Cross Validation for parameters of SJ Data
+set.seed(101)
+
+sj_data["total_cases"] <- sj_joined$total_cases
+boruta.train <- Boruta(total_cases~., data = sj_data, doTrace = 3)
+print(boruta.train)
+
+plot(boruta.train, xlab = "", xaxt = "n")
+lz<-lapply(1:ncol(boruta.train$ImpHistory),function(i)
+  boruta.train$ImpHistory[is.finite(boruta.train$ImpHistory[,i]),i])
+names(lz) <- colnames(boruta.train$ImpHistory)
+Labels <- sort(sapply(lz,median))
+axis(side = 1,las=2,labels = names(Labels),
+     at = 1:ncol(boruta.train$ImpHistory), cex.axis = 0.7)
+
+final.boruta <- TentativeRoughFix(boruta.train)
+print(final.boruta)
+
+boruta.df <- attStats(final.boruta)
+#class(boruta.df)
+print(boruta.df)
+
+#install.packages('caret')
+#install.packages('randomForest')
+
+library(caret)
+library(randomForest)
+
+set.seed(123)
+
+control <- rfeControl(functions=rfFuncs, method="cv", number=10)
+rfe.train <- rfe(sj_data[,2:24], sj_data[,25], sizes=1:23, rfeControl=control)
+features_plot_sj <- plot(rfe.train, type=c("h", "o"), cex = 1.0, col = 1:23)
+
+
+
+# Cross Validation for parameters of IQ
+set.seed(202)
+
+iq_data["total_cases"] <- iq_joined$total_cases
+boruta_train_iq <- Boruta(total_cases~., data = iq_data, doTrace = 3)
+print(boruta_train_iq)
+
+boruta_train_plot_iq <- plot(boruta_train_iq, xlab = "", xaxt = "n")
+lz_iq<-lapply(1:ncol(boruta_train_iq$ImpHistory),function(i)
+  boruta_train_iq$ImpHistory[is.finite(boruta_train_iq$ImpHistory[,i]),i])
+names(lz_iq) <- colnames(boruta_train_iq$ImpHistory)
+Labels_iq <- sort(sapply(lz_iq,median))
+axis(side = 1,las=2,labels = names(Labels_iq),
+     at = 1:ncol(boruta_train_iq$ImpHistory), cex.axis = 0.7)
+
+final_boruta_iq <- TentativeRoughFix(boruta_train_iq)
+print(final_boruta_iq)
+boruta_df_iq <- attStats(final_boruta_iq)
+
+control <- rfeControl(functions=rfFuncs, method="cv", number=10)
+rfe.train <- rfe(iq_data[,2:24], iq_data[,25], sizes=1:23, rfeControl=control)
+features_plot_iq <- plot(rfe.train, type=c("h", "o"), cex = 1.0, col = 1:23)
+
+# Why Ridge Regression
+# It includes all (or none) of the features in the model. Thus, the major advantage of ridge
+# regression is coefficient shrinkage and reducing model complexity.
+# It is majorly used to prevent overfitting. Since it includes all the features, it is not very 
+# useful in case of exorbitantly high #features, say in millions, as it will pose computational challenges.
+#  It generally works well even in presence of highly correlated features as it will include all of them in
+# the model but the coefficients will be distributed among them depending on the correlation.
+
