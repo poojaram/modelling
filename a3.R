@@ -46,16 +46,56 @@ for(i in 1:ncol(iq_joined)){
 }
 
 
-############################### HUMIDITY  HUMIDITY HUMIDITY ################################################
+############################### HUMIDITY  PREC HUMIDITY ################################################
 
-sj_humidity <- select(sj_joined, total_cases, four_lag_cases,reanalysis_relative_humidity_percent)
+sj_info <- select(sj_joined, year, weekofyear, total_cases, four_lag_cases, eight_lag_cases,reanalysis_relative_humidity_percent,
+                      reanalysis_sat_precip_amt_mm)
+
+iq_info <- select(iq_joined, year, weekofyear, total_cases, four_lag_cases, eight_lag_cases,reanalysis_relative_humidity_percent,
+                  reanalysis_sat_precip_amt_mm)
+
+
+sj_box_df <- select(sj_info, weekofyear, reanalysis_relative_humidity_percent, reanalysis_sat_precip_amt_mm)
+sj_box_df$weekofyear <- as.factor(sj_box_df$weekofyear)
+  
+
+sj_box_p <- ggplot(sj_box_df, aes(x=weekofyear, y=reanalysis_sat_precip_amt_mm)) + 
+  geom_boxplot() 
+  
+sj_prec_curve <- group_by(sj_info, weekofyear) %>%
+  summarize(mean_of_prec = mean(reanalysis_sat_precip_amt_mm))
+
+sj_prec_curve_p <- ggplot(sj_prec_curve) +
+  geom_bar(mapping = aes(x = weekofyear, y = mean_of_prec), stat = "identity") 
+  
+
+iq_box_df <- select(iq_info, weekofyear, reanalysis_relative_humidity_percent, reanalysis_sat_precip_amt_mm)
+iq_box_df$weekofyear <- as.factor(iq_box_df$weekofyear)
+
+
+iq_box_p <- ggplot(iq_box_df, aes(x=weekofyear, y=reanalysis_sat_precip_amt_mm)) + 
+  geom_boxplot() 
+
+iq_prec_curve <- group_by(iq_info, weekofyear) %>%
+  summarize(mean_of_prec = mean(reanalysis_sat_precip_amt_mm))
+
+iq_prec_curve_p <- ggplot(iq_prec_curve) +
+  geom_bar(mapping = aes(x = weekofyear, y = mean_of_prec), stat = "identity") 
+
+
+
 
 sj_humidity_plots <-  ggplot() +
-  geom_smooth(data = sj_humidity, aes(x = reanalysis_relative_humidity_percent, y = total_cases), fill="blue",
+  geom_smooth(data = sj_info, aes(x = reanalysis_relative_humidity_percent, y = total_cases), fill="blue",
               colour="darkblue", size=1) +
-  geom_smooth(data=sj_humidity, aes(x = reanalysis_relative_humidity_percent, y = four_lag_cases), fill="red",
+  geom_smooth(data=sj_info, aes(x = reanalysis_relative_humidity_percent, y = four_lag_cases), fill="red",
               colour="red", size=1)
 
+sj_prec_plots <-  ggplot() +
+  geom_smooth(data = sj_info, aes(x = reanalysis_sat_precip_amt_mm, y = total_cases), fill="blue",
+              colour="darkblue", size=1) +
+  geom_smooth(data=sj_info, aes(x = reanalysis_sat_precip_amt_mm, y = eight_lag_cases), fill="red",
+              colour="red", size=1)
 
 #########################################################################################################
 
@@ -176,5 +216,4 @@ sj_cases_over_weeks <- ggplot(data = sj_joined) +
 
 # Plot for cases over weeks for different years in IQ
 iq_cases_over_weeks <- ggplot(data = iq_joined) +
-  geom_line(mapping = aes(x = weekofyear, y = four_lag_cases)) +
-  facet_wrap(~year)
+  geom_line(mapping = aes(x = weekofyear, y = four_lag_cases))
