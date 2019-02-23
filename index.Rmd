@@ -8,28 +8,15 @@ output:
     highlight: github
 ---
 
-# Introduction
 
-#### What is Dengue Fever?
+```{r child="index_part1.Rmd"}
+```
 
-Dengue fever is a painful, debilitating mosquito-borne disease caused by any one of four closely related dengue viruses. Dengue fever is transmitted by the bite of an Aedes mosquito infected with a dengue virus. The mosquito becomes infected when it bites a person with dengue virus in their blood. It can’t be spread directly from one person to another person.         
-In recent decades, the number of new cases of dengue has increased dramatically. Dengue is spread by the same kind of mosquito that spreads the Zika virus and the virus that causes yellow fever.
+```{r child="index_part2.Rmd"}
+```
 
-#### What causes Dengue Fever?
+##### References 
 
-Aedes mosquitoes are usually found in urban and suburban areas, as they like to breed in man-made containers like tires, flowerpots, and household water. Aedes albopictus mosquitos have been transported to North America and Europe by Asian products like used tires and lucky bamboo. These mosquitos can survive subfreezing temperatures, which has allowed dengue to spread to cooler climates. In this report, we will be modeling the outbreak of Dengue in the cities of San Juan and Iquitos in South America. As mentioned earlier, the mosquitoes carrying the virus are more likely to breed in damp environments such as puddles, water storage units, etc., and these surroundings are influenced by various climatic conditions such as Humidity and Temperature. Other important factors potentially contributing to global changes in dengue incidence and distribution include population growth, urbanization, lack of sanitation, increased long-distance travel, ineffective mosquito control, and increased reporting capacity. In the next section, we will further understand the predictors used in the model and their relation to the Aedes mosquitos.
+1. SAURAV KAUSHIK. (Dec 2016). [Introduction to Feature Selection methods with an example (or how to select the right variables?)](https://www.analyticsvidhya.com/blog/2016/12/introduction-to-feature-selection-methods-with-an-example-or-how-to-select-the-right-variables/)
 
-#### How is dissemination of Dengue affected by enfironmental factors?
-
-##### Dengue and Temperature:
-
-
-##### Dengue and Flora:
-
-##### Dengue and Precipitation:
-
-#### References 
-
-1. Carvajal, Thaddeus & Watanabe, Kozo. (2014). [ENVIRONMENTAL DETERMINANTS IN THE CONTROL OF DENGUE MOSQUITO VECTOR, Aedes aegypti.](https://www.researchgate.net/publication/274065283_ENVIRONMENTAL_DETERMINANTS_IN_THE_CONTROL_OF_DENGUE_MOSQUITO_VECTOR_Aedes_aegypti)
-2. L. Ebi, Kristie & Nealon, Joshua. (Nov 2016). Environmental Research Vol. 151. [DENGUE IN A CHANGING CLIMATE.](https://www.sciencedirect.com/science/article/pii/S0013935116303127) 
-3. 
+2. Jason Brownlee. (Oct 2014). [An Introduction to Feature Selection](https://machinelearningmastery.com/an-introduction-to-feature-selection/)

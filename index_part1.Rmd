@@ -1,0 +1,144 @@
+---
+output: html_document
+---
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+source('a3_part1.R')
+library('ggplot2')
+```
+# Introduction
+
+#### What is Dengue Fever?
+
+Dengue fever is a painful, debilitating mosquito-borne disease caused by any one of four closely related dengue viruses. Dengue fever is transmitted by the bite of an Aedes mosquito infected with a dengue virus. The mosquito becomes infected when it bites a person with dengue virus in their blood. It can’t be spread directly from one person to another person.         
+In recent decades, the number of new cases of dengue has increased dramatically. Dengue is spread by the same kind of mosquito that spreads the Zika virus and the virus that causes yellow fever.
+
+#### What causes Dengue Fever?
+
+Aedes mosquitoes are usually found in urban and suburban areas, as they like to breed in man-made containers like tires, flowerpots, and household water. Aedes albopictus mosquitos have been transported to North America and Europe by Asian products like used tires and lucky bamboo. These mosquitos can survive subfreezing temperatures, which has allowed dengue to spread to cooler climates. In this report, we will be modeling the outbreak of Dengue in the cities of San Juan and Iquitos in South America. As mentioned earlier, the mosquitoes carrying the virus are more likely to breed in damp environments such as puddles, water storage units, etc., and these surroundings are influenced by various climatic conditions such as Humidity and Temperature. Other important factors potentially contributing to global changes in dengue incidence and distribution include population growth, urbanization, lack of sanitation, increased long-distance travel, ineffective mosquito control, and increased reporting capacity. In the next section, we will further understand the predictors used in the model and their relation to the Aedes mosquitos.
+
+
+##### References 
+
+1. Carvajal, Thaddeus & Watanabe, Kozo. (2014). [ENVIRONMENTAL DETERMINANTS IN THE CONTROL OF DENGUE MOSQUITO VECTOR, Aedes aegypti.](https://www.researchgate.net/publication/274065283_ENVIRONMENTAL_DETERMINANTS_IN_THE_CONTROL_OF_DENGUE_MOSQUITO_VECTOR_Aedes_aegypti)
+2. L. Ebi, Kristie & Nealon, Joshua. (Nov 2016). Environmental Research Vol. 151. [DENGUE IN A CHANGING CLIMATE.](https://www.sciencedirect.com/science/article/pii/S0013935116303127) 
+3. Youngjo Choi, Choon Siang Tang, Lachlan McIver (Mar 2016) [Effects of weather factors on dengue fever incidence and implications for interventions in Cambodia](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4784273/)
+3. Felipe J. Colón-González, Iain R. Lake, and Graham Bentham (May 2011). [Climate Variability and Dengue Fever in Warm and Humid Mexico](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3083744/)
+
+#### Data Preparation
+
+To analyze the data we start by loading, cleaning and preparing it. I decided to use R Studio to process the data required for this project. The training data included two files : train_featues.csv and train_labels.csv . For ease of access, I merged the files into a single files by columns 'weekofyear', 'year', 'city'. I then split this data into a list of two separate dataframes for each city - San Juan and Iquitos. This would help in finding correlations and strengths of associations for each city separately.
+
+**Missing Values and Eliminating Extra Features**
+
+Looking at the data, we can see that for certain features (eg. Total Precipitation, Avg. Temperature) the data included values from two sources. The sources include
+
+  * NOAA's GHCN daily climate data weather station measurements
+  * NOAA's NCEP Climate Forecast System Reanalysis measurements (0.5x0.5 degree scale)
+
+To decide which source would be better for our analysis, I found two data driven reasons in favour of the NOAA's NCEP values.
+
+  1. The correlation of Total Precipitation from each source (GHCN and NCEP) to the total_cases, and n_lag_cases (explained below),      the NCEP values turned out to be much more correlated for both the cities.
+  2. The GHCN values contained much more missing values ( > 5% in one case) than NCEP values.
+  
+Due to these reasons, I eliminated NOAA's GHCN columns from the data. I filled any missing values using with the mean value of the column for a close approximation.
+
+**Additional Variables**
+
+* **Lagged total cases ( n_lag_cases )**
+
+While researching about the problem, I found that it is safe to assume that the environmental variables may affect the spread of dengue after a certain lag time. This is because there is typically a lag of weeks to months between changes in weather and associated dengue incidence. this lag time could be around 1-3 months. To account for this lag period I created two lag variables four_lag_cases and eight_lag_cases that essentially contain total_cases values shifted up by 4, 8 weeks respectively. I replaced the first n values, after performing a shift, with the mean of preceeding n values to give a close approximation of cases. These two new variables can now help us determine if the environmental variables are correlated to dengue cases reported after n weeks.
+
+* **Mean Vegetation (mean_vegetation)**
+
+The starter data also included Normalized difference vegetation index divided into four pixels in each direction from the centroid of the city. In order to get a better sense of the overall vegetation index of the city and obtain a single value for analysis, I created a new variable called mean_vegetation_index which, as the name suggests, is the mean of the four vegetation indexes of each week
+
+After performing basic data preperation and adding additional variables the metadata looks like the following.
+
+```
+city
+year
+weekofyear
+reanalysis_sat_precip_amt_mm (Total Precipitation)
+reanalysis_dew_point_temp_k (Mean Dew Point Temperature)
+ndvi_se (Pixel southeast of city centroid)
+ndvi_sw (Pixel southwest of city centroid)
+ndvi_ne (Pixel northeast of city centroid)
+ndvi_nw (Pixel northwest of city centroid)
+reanalysis_precip_amt_kg_per_m2 (Total Precipitation)
+reanalysis_max_air_temp_k (Maximum Air Temperature)
+reanalysis_min_air_temp_k (Minimum Air Temperature)
+reanalysis_avg_temp_k (Average Air Temperature)
+reanalysis_tdtr_k (Diurnal temperature range)
+four_lag_cases
+eight_lag_cases
+mean_vegetation
+```
+
+#### How is dissemination of Dengue affected by enfironmental factors?
+
+
+##### Dengue and Temperature:
+
+The relationship between dengue and temperature is complicated. Let us first look at a simple scatter and smooth curve plot between total dengue cases againgst average temperature and for each of the cities respectively. As we can see from these plots there seems to be a general trend between average temperature and total count of dengue cases. In San Juan the the general trend seems to be that an increase in the temperate leads to an increase in the number of total dengue cases. In Iquitos as the temperature increases the total cases increase; however, after 301K the total cases seem to decrease. This is probably because of other  environmental in Iquitos that causes the aedes mosquitoe to decease or make it incapable of trasmitting the disease.
+
+```{r echo=FALSE, message=FALSE}
+plot(temp_vs_totcases_plots)
+```
+
+Another trend we can see is how the diurnal temperature range can affect the total cases of dengue in higher and lower temperatures, According to the article 'Dengue in a changing climate' at 26 C (299.15 K) mosquitoes are susceptible to infection and survive for a shorter period under larger diurnal temperature ranges. however, these findings do not resonate with the San Juan graph shown below; for average temperatures greater than 299.15 K (shown in red), the total cases of dengue are higher than for average temperatures smaller than 299.15 K (shown in blue). In Iquitos however, at around a diurnal temperature range of 11 K, the total cases for dengue start to increase for lower temperature and start to decrease for higher temperature. This might suggest that San Juan is a more urban city giving the aedes mosquitoes more places to hide during a day with high diurnal temperature range. We use a lag of four weeks for total casesbecause there is typically a lag of weeks to months between changes in weather and associated dengue cases.
+
+```{r echo=FALSE, message=FALSE}
+plot(sj_temp_range_cases_plots_fourlag)
+plot(iq_temp_range_cases_plots_fourlag)
+```
+
+##### Dengue and vegetation :
+
+Let us see if vegetation  has an effect on precipitation which in return might have an effect on total cases of dengue. In San Juan, most of the precipitation seems to be taking place when the NDVI mean is between 0.0 and 0.2. In Iquitos, most of the precipitation seems to be taking place between an NDVI mean of 0.1 and 0.4; however, there seems to be no correlation between NDVI mean and total precipitation in Iquitos.
+
+
+```{r echo=FALSE, message=FALSE}
+plot(prec_veg_plots)
+```
+
+##### Dengue and Precipitation:
+
+Before we start looking into how precipitation effects dengue cases, let us first see how rainfall is distributed over time in San Juan and Iquitos. For San Juan, from the weeks of 1 to 13 and 49 to 52 the average precipitation is way lower than the average precipitation from weeks 14 to 48. This suggests that San Juan experiences a wet season from the weeks of 17 to 47 and a dry season for the rest of the year. For Iquitos, from the weeks of 23 to 39 the average precipitation is way lower than the average precipitation for the rest of the weeks suggesting that this is the dry season.
+
+```{r echo=FALSE, message=FALSE}
+plot(sj_box_p)
+plot(iq_box_p)
+```
+
+To see weather the seasons affect the total number of dengue fever cases, we plotted a graph of total dengue cases for both the cities and both the season. From the reasults we can clearly see that total cases of dengue fever are higher during the wet seasons than the dry seasons. The increase in total cases of dengue fever is much steeper for San Juan, this might be becase the total cases of dengue were much higher in the dry season, which means more aedes mosquitoes could reproduce and since population growth is exponential it has a much steeper increase in cases. This aligns with the findings of 'Climate Variability and Dengue Fever in Warm and Humid Mexico' which states that an increase in precipitation will lead to an increase in dengue transmission.
+
+```{r echo=FALSE, message=FALSE}
+plot(dry_to_wet_plot)
+```
+
+To see how  total precipitation effect total dengue cases at different temperatures, we split the temperatures into three categories(low, medium and high) and then plot a graph for total cases of dengue by total precipitation at low, medium and high temperatures. As we can see from the graphs, in San Juan for low temperatures there seems to be a drop in dengue cases with increase in precipitation until 12.5 mm of precipitation, from 12.5 mm to 50 mm there's a sudden increase in dengue cases, and then the total dengue cases start to decrease with increase in precipitation; at medium temperatures the total cases are more or less the same with a few exceptions; however, at high temperatures as the precipitation amount increases the total cases of dengue fever increase. This suggests that at high temperatures in San Juan as the precipitation increases the total cases of dengue fever will increase. In Iquitos for low temperatures there seems to be a drop in dengue cases with increase in precipitation until 37.5 mm of precipitation, from 37.5 mm the total dengue cases start to increase with increase in precipitation; at medium temperatures the total cases seem to increase with in increase in precipitation; at high temperatures as the precipitation amount increases the total cases of dengue fever increase until 45 mm of rain and then starts to decrease. This suggests that at medium and temperatures in Iquitos as the precipitation increases the total cases of dengue fever will increase, however at high temperatues a rainfall greater than 45 mm will cause a decline in total cases of dengue fever.
+
+```{r echo=FALSE, message=FALSE}
+plot(high_low_med_p_sj)
+plot(high_low_med_p_iq)
+```
+
+##### How Dengue cases vary over 52 weeks for all the years:
+
+The following graphs show how cases of dengue varied over time for cities of San Juan and Iquitos. In San Juan we can see sudden spikes in dengue cases for the years 1994, 1998, 2005 and 2007, in Iquitos we can see spikes in the data for 2004 and 2008. These spikes can be explained by the El Nino effect, which is an abnormal weather pattern caused by the warming of the Pacific Ocean near the equator, off the coast of South America.
+
+```{r echo=FALSE, message=FALSE}
+plot(sj_cases_over_weeks)
+plot(iq_cases_over_weeks)
+```
+
+
+
+##### References 
+
+1. Carvajal, Thaddeus & Watanabe, Kozo. (2014). [ENVIRONMENTAL DETERMINANTS IN THE CONTROL OF DENGUE MOSQUITO VECTOR, Aedes aegypti.](https://www.researchgate.net/publication/274065283_ENVIRONMENTAL_DETERMINANTS_IN_THE_CONTROL_OF_DENGUE_MOSQUITO_VECTOR_Aedes_aegypti)
+2. L. Ebi, Kristie & Nealon, Joshua. (Nov 2016). Environmental Research Vol. 151. [DENGUE IN A CHANGING CLIMATE.](https://www.sciencedirect.com/science/article/pii/S0013935116303127) 
+3. Youngjo Choi, Choon Siang Tang, Lachlan McIver (Mar 2016) [Effects of weather factors on dengue fever incidence and implications for interventions in Cambodia](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4784273/)
+3. Felipe J. Colón-González, Iain R. Lake, and Graham Bentham (May 2011). [Climate Variability and Dengue Fever in Warm and Humid Mexico](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC3083744/)
